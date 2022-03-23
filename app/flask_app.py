@@ -3,7 +3,11 @@ import chart_data_builder
 
 app = Flask(__name__)
 
-@app.route('/get_chart', methods=['POST'])
+@app.route('/')
+def homepage():
+    return '<h1>UAIC Portfolio Tracker</h1>Docs to appear here soon...'
+
+@app.route('/get-chart', methods=['POST'])
 def process_json():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
