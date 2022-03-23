@@ -85,6 +85,7 @@ def build_data(holdings):
 
     # determine value at each timestamp
     cur_holdings = []
+    cur_holdings_val = 0
     output_data = {
         'timestamps': [],
         'total': [],
@@ -101,21 +102,21 @@ def build_data(holdings):
                     'price': action['price'],
                     'quantity': action['quantity']
                 }]
+                new_investment = action['quantity'] * action['price']
+                if action['ticker'][-3:] == '.AX':
+                    new_investment /= reindexed_data['NZDAUD=X'][i]
+                cur_holdings_val += new_investment
         # determine the values of the portfolio / invested amounts based on cur_holdings
         portfolio_value = 0
-        invested_value = 0
         for holding in cur_holdings:
             holding_value = holding['quantity'] * reindexed_data[holding['ticker']][i]
-            holding_invested_val = holding['quantity'] * holding['price']
             # adjust for currency
             if holding['ticker'][-3:] == '.AX':
                 holding_value /= reindexed_data['NZDAUD=X'][i]
-                holding_invested_val /= reindexed_data['NZDAUD=X'][i]
             # add to total
             portfolio_value += holding_value
-            invested_value += holding_invested_val
         output_data['total'] += [portfolio_value]
-        output_data['invested'] += [invested_value]
+        output_data['invested'] += [cur_holdings_val]
 
     # return the values as json
     return output_data
