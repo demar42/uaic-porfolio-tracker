@@ -1,5 +1,5 @@
 from flask import Flask, request
-import chart_data_builder
+import app.chart_data_builder
 
 app = Flask(__name__)
 
