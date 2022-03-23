@@ -1,0 +1,147 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+
+<style>
+    #container {
+        width: 1000px;
+        height: 500px;
+        margin: 0 auto;
+    }
+</style>
+
+<div id="container">
+    <canvas id="myChart" width="400" height="400"></canvas>
+</div>
+<script>
+const holdings = {
+    'body': [
+        {
+            'ticker': 'CSL.AX',
+            'quantity': 4,
+            'price': 296.835,
+            'date': '2021-08-17'
+        },
+        {
+            'ticker': 'SSG.AX',
+            'quantity': 1338,
+            'price': 1.00,
+            'date': '2021-09-24'
+        },
+        {
+            'ticker': 'SPK.NZ',
+            'quantity': 430,
+            'price': 4.49,
+            'date': '2019-10-15'
+        },
+        {
+            'ticker': 'QAN.AX',
+            'quantity': 400,
+            'price': 3.64,
+            'date': '2020-05-05'
+        },
+        {
+            'ticker': 'SGM.AX',
+            'quantity': 200,
+            'price': 6.77,
+            'date': '2020-05-05'
+        },
+        {
+            'ticker': 'CWY.AX',
+            'quantity': 622,
+            'price': 2.107,
+            'date': '2020-06-19'
+        },
+        {
+            'ticker': 'RHC.AX',
+            'quantity': 20,
+            'price': 66.68,
+            'date': '2020-06-19'
+        },
+    ]
+}
+
+
+async function main() {
+    data = await fetch("https://uaic-portfolio-tracker.herokuapp.com/get-chart", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(holdings)
+            })
+            .then(res => res.json());
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.timestamps,
+            datasets: [
+                {
+                    label: 'Portfolio Value',
+                    data: data.total,
+                    fill: 'origin',
+                    borderColor: '#2364ac',
+                    backgroundColor: '#2364ac44',
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBorderWidth: 2,
+                    tension: 0.2
+                },
+                {
+                    label: 'Invested Amount',
+                    data: data.invested,
+                    fill: 'rgba(130, 130, 132, 0.2)',
+                    pointHoverRadius: 5,
+                    pointRadius: 0,
+                    pointHoverBorderWidth: 2,
+                    borderDash: [3,3],
+                    borderColor: 'rgba(130, 130, 130, 1)',
+                    tension: 0
+                },
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 10,
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                    },
+                }
+            }
+        },
+        plugins: [{
+          afterDraw: chart => {
+            if (chart.tooltip?._active?.length) {               
+               let x = chart.tooltip._active[0].element.x;             
+               let yAxis = chart.scales.y;
+               let ctx = chart.ctx;
+               ctx.save();
+               ctx.beginPath();
+               ctx.moveTo(x, yAxis.top);
+               ctx.lineTo(x, yAxis.bottom);
+               ctx.lineWidth = 1;
+               ctx.strokeStyle = 'rgba(0, 0, 255, 0.4)';
+               ctx.stroke();
+               ctx.restore();
+            }
+          }
+        }],
+    });
+}
+
+main();
+</script>
