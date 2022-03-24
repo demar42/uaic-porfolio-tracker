@@ -1,16 +1,62 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
 
 <style>
     #container {
-        width: 1000px;
+        width: 100%;
         height: 500px;
+        max-height: 50vw;
         margin: 0 auto;
+        font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    }
+    #tile-containers {
+        display: flex;
+        justify-content: center;
+    }
+    .tiles {
+        text-align: center;
+        width: 15rem;
+        margin: 0 2rem;
+    }
+    .tiles h1 {
+        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+    }
+    #loading {
+        animation: blinker 1s linear infinite;
+        text-align: center;
+        font-size: 1.5rem;
+        position: absolute;
+        top: 25vh;
+        left: 0;
+        right: 0;
+    }
+
+    @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
     }
 </style>
 
 <div id="container">
-    <canvas id="myChart" width="400" height="400"></canvas>
+    <div id="loading">Loading data...</div>
+    <div id="chart-container">
+        <canvas id="myChart" width="400" height="400"></canvas>
+    </div>
+    <div id="tile-containers">
+        <div class="tiles">
+            <h1 id="total-invested-h1">$0</h1>
+            Current Portfolio Value
+        </div>
+        <div class="tiles">
+            <h1 id="total-return-h1">0%</h1>
+            Total Return
+        </div>
+    </div>
 </div>
+
 <script>
 const holdings = {
     'body': [
@@ -61,12 +107,24 @@ const holdings = {
 
 
 async function main() {
-    data = await fetch("https://uaic-portfolio-tracker.herokuapp.com/get-chart", {
-            method: "POST",
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(holdings)
-            })
-            .then(res => res.json());
+    let data = await fetch("https://uaic-portfolio-tracker.herokuapp.com/get-chart", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(holdings)
+                })
+                .then(res => res.json());
+
+    for (let i = 0; i < data.timestamps.length; i++) {
+        data.total[i] = Math.round(data.total[i]);
+        data.invested[i] = Math.round(data.invested[i]);
+    }
+
+    document.getElementById('loading').style.display = 'none';
+
+    const portfolio = data.total.slice(-1)[0]
+    const invested = data.invested.slice(-1)[0]
+    document.getElementById('total-invested-h1').innerHTML = '$' + portfolio.toLocaleString();
+    document.getElementById('total-return-h1').innerHTML = ((portfolio / invested - 1) * 100).toFixed(1) + '%';
 
     const ctx = document.getElementById('myChart').getContext('2d');
     const myChart = new Chart(ctx, {
@@ -102,13 +160,21 @@ async function main() {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 10,
+                    type: 'time',
+                    time: {
+                        parser: 'YYYY-MM-DD',
+                        tooltipFormat: 'D MMM YYYY',
+                        unit: 'quarter',
+                        displayFormats: {
+                            quarter: 'MMM YYYY'
+                        }
                     }
                 },
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {return '$' + this.getLabelForValue(value)},
+                    }
                 }
             },
             interaction: {
@@ -120,6 +186,11 @@ async function main() {
                     labels: {
                         usePointStyle: true,
                     },
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {return context.dataset.label + ': $' + context.parsed.y.toLocaleString()},
+                    }
                 }
             }
         },
