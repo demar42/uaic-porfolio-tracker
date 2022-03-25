@@ -1,63 +1,8 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
-
-<style>
-    #container {
-        width: 100%;
-        height: 500px;
-        max-height: 50vw;
-        margin: 0 auto;
-        font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-    }
-    #tile-containers {
-        display: flex;
-        justify-content: center;
-    }
-    .tiles {
-        text-align: center;
-        width: 15rem;
-        margin: 0 2rem;
-    }
-    .tiles h1 {
-        margin-bottom: 0.5rem;
-        font-size: 2.5rem;
-    }
-    #loading {
-        animation: blinker 1s linear infinite;
-        text-align: center;
-        font-size: 1.5rem;
-        position: absolute;
-        top: 25vh;
-        left: 0;
-        right: 0;
-    }
-
-    @keyframes blinker {
-        50% {
-            opacity: 0;
-        }
-    }
-</style>
-
-<div id="container">
-    <div id="loading">Loading data...</div>
-    <div id="chart-container">
-        <canvas id="myChart" width="400" height="400"></canvas>
-    </div>
-    <div id="tile-containers">
-        <div class="tiles">
-            <h1 id="total-invested-h1">$0</h1>
-            Current Portfolio Value
-        </div>
-        <div class="tiles">
-            <h1 id="total-return-h1">0%</h1>
-            Total Return
-        </div>
-    </div>
-</div>
-
-<script>
+<script defer="true">
+// any edits need to be made to these two variables
+// follow the format for the holdings. The ticker needs to be the Yahoo Finance ticker
+// if you run into any bugs, the codebase for the server can be found at https://github.com/demar42/uaic-porfolio-tracker
+const totalCash = 24573;
 const holdings = {
     'body': [
         {
@@ -123,8 +68,11 @@ async function main() {
 
     const portfolio = data.total.slice(-1)[0]
     const invested = data.invested.slice(-1)[0]
+    const yearsSinceInception = moment().diff(moment(data.timestamps[0]), 'years', true);
     document.getElementById('total-invested-h1').innerHTML = '$' + portfolio.toLocaleString();
+    document.getElementById('total-cash-h1').innerHTML = '$' + (totalCash - invested).toLocaleString(); 
     document.getElementById('total-return-h1').innerHTML = ((portfolio / invested - 1) * 100).toFixed(1) + '%';
+    document.getElementById('annual-return-h1').innerHTML = (((portfolio / invested) ** (1 / yearsSinceInception) - 1) * 100).toFixed(1) + '%';
 
     const ctx = document.getElementById('myChart').getContext('2d');
     const myChart = new Chart(ctx, {
@@ -216,3 +164,70 @@ async function main() {
 
 main();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+
+<div id="container">
+    <div id="loading">Loading data...</div>
+    <div id="chart-container">
+        <canvas id="myChart" width="400" height="400"></canvas>
+    </div>
+    <div id="tile-containers">
+        <div class="tiles">
+            <h1 id="total-invested-h1">$0</h1>
+            Current Invested Value
+        </div>
+        <div class="tiles">
+            <h1 id="total-cash-h1">$0</h1>
+            Available Cash
+        </div>
+        <div class="tiles">
+            <h1 id="total-return-h1">0%</h1>
+            Total Return since inception
+        </div>
+        <div class="tiles">
+            <h1 id="annual-return-h1">0%</h1>
+            Annual Return
+        </div>
+    </div>
+</div>
+
+<style>
+    #container {
+        width: 100%;
+        height: 500px;
+        max-height: 50vw;
+        margin: 0 auto;
+        font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    }
+    #tile-containers {
+        display: flex;
+        justify-content: center;
+    }
+    .tiles {
+        text-align: center;
+        width: 15rem;
+        margin: 0 2rem;
+    }
+    .tiles h1 {
+        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+    }
+    #loading {
+        animation: blinker 1s linear infinite;
+        text-align: center;
+        font-size: 1.5rem;
+        position: absolute;
+        top: 25vh;
+        left: 0;
+        right: 0;
+    }
+
+    @keyframes blinker {
+        50% {
+            opacity: 0;
+        }
+    }
+</style>
